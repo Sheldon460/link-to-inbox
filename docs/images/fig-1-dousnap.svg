@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 480" role="img">
+  <title>dousnap 操作界面 mockup</title>
+  <desc>浏览器窗口内打开 dousnap.com，左侧是 URL 输入框 + 提取文案按钮，右侧显示带【画面】【旁白】结构的提取结果</desc>
+
+  <defs>
+    <marker id="dot" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="6" markerHeight="6">
+      <circle cx="4" cy="4" r="3" fill="#5F5E5A"/>
+    </marker>
+  </defs>
+
+  <!-- 浏览器窗口外框 -->
+  <rect x="20" y="20" width="640" height="440" rx="10" ry="10" fill="white" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <!-- 标题栏 -->
+  <rect x="20" y="20" width="640" height="36" rx="10" ry="10" fill="#F1EFE8"/>
+  <rect x="20" y="46" width="640" height="10" fill="#F1EFE8"/>
+  <circle cx="40" cy="38" r="5" fill="#E24B4A"/>
+  <circle cx="58" cy="38" r="5" fill="#EF9F27"/>
+  <circle cx="76" cy="38" r="5" fill="#639922"/>
+
+  <!-- URL bar -->
+  <rect x="100" y="28" width="540" height="20" rx="10" ry="10" fill="white" stroke="#D3D1C7" stroke-width="0.5"/>
+  <text x="115" y="42" font-family="ui-monospace, monospace" font-size="11" fill="#5F5E5A">https://www.dousnap.com/</text>
+
+  <!-- 主区域: 左侧输入面板 -->
+  <rect x="40" y="80" width="280" height="360" rx="8" ry="8" fill="white" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <!-- 步骤指示 -->
+  <text x="60" y="105" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="500" fill="#2C2C2A">提取视频文案</text>
+
+  <!-- URL 输入框 -->
+  <text x="60" y="135" font-family="ui-sans-serif, system-ui" font-size="12" fill="#5F5E5A">粘贴视频链接</text>
+  <rect x="60" y="142" width="240" height="34" rx="6" ry="6" fill="white" stroke="#B4B2A9" stroke-width="0.5"/>
+  <text x="70" y="163" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">https://www.bilibili.com/video/BV1xx...</text>
+
+  <!-- 按钮 -->
+  <rect x="60" y="190" width="240" height="36" rx="6" ry="6" fill="#534AB7"/>
+  <text x="180" y="213" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="500" fill="white">提取文案</text>
+
+  <!-- 操作说明 -->
+  <text x="60" y="252" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#5F5E5A">支持 7 个平台</text>
+  <rect x="60" y="262" width="50" height="22" rx="11" ry="11" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="85" y="277" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#3C3489">抖音</text>
+  <rect x="116" y="262" width="50" height="22" rx="11" ry="11" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="141" y="277" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#3C3489">小红书</text>
+  <rect x="172" y="262" width="50" height="22" rx="11" ry="11" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="197" y="277" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#3C3489">B站</text>
+  <rect x="228" y="262" width="50" height="22" rx="11" ry="11" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="253" y="277" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#3C3489">视频号</text>
+
+  <rect x="60" y="292" width="50" height="22" rx="11" ry="11" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="85" y="307" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#0C447C">快手</text>
+  <rect x="116" y="292" width="56" height="22" rx="11" ry="11" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="144" y="307" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#0C447C">TikTok</text>
+  <rect x="178" y="292" width="62" height="22" rx="11" ry="11" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
+  <text x="209" y="307" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#0C447C">YouTube</text>
+
+  <!-- 提示文字 -->
+  <text x="60" y="345" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">无需登录 · 完全免费</text>
+  <text x="60" y="362" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">支持官方字幕提取</text>
+  <text x="60" y="379" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">视频 + 封面一次性下载</text>
+
+  <!-- 分隔线 -->
+  <line x1="340" y1="80" x2="340" y2="440" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <!-- 右侧结果面板 -->
+  <rect x="360" y="80" width="280" height="360" rx="8" ry="8" fill="white" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <text x="380" y="105" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="500" fill="#2C2C2A">提取结果</text>
+
+  <!-- 视频标题 -->
+  <rect x="380" y="120" width="240" height="28" rx="4" ry="4" fill="#F1EFE8"/>
+  <text x="390" y="138" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#2C2C2A">视频标题：WorkBuddy 入门指南</text>
+
+  <!-- 画面/旁白分段 -->
+  <text x="380" y="170" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#534AB7">【画面】</text>
+  <text x="380" y="188" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">开场白 + 工具 logo 出现</text>
+
+  <text x="380" y="210" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#534AB7">【旁白】</text>
+  <text x="380" y="228" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">大家好，今天分享一个我用</text>
+  <text x="380" y="244" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">WorkBuddy 半小时搞定一天</text>
+  <text x="380" y="260" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">工作的方法...</text>
+
+  <text x="380" y="285" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#534AB7">【画面】</text>
+  <text x="380" y="303" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">第一步操作演示</text>
+
+  <text x="380" y="325" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#534AB7">【旁白】</text>
+  <text x="380" y="343" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">第一步是收集灵感...</text>
+
+  <!-- 下载按钮 -->
+  <rect x="380" y="378" width="80" height="28" rx="4" ry="4" fill="#EAF3DE" stroke="#639922" stroke-width="0.5"/>
+  <text x="420" y="396" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#27500A">下载视频</text>
+  <rect x="468" y="378" width="80" height="28" rx="4" ry="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="508" y="396" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" fill="#3C3489">下载封面</text>
+
+  <!-- 底部注解 -->
+  <text x="340" y="465" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#5F5E5A">图 1：dousnap 一站式提取 7 个视频/图文平台</text>
+</svg>

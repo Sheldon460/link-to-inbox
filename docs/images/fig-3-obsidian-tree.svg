@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 520" role="img">
+  <title>Obsidian 02.素材收件箱 目录树</title>
+  <desc>展示 9 个平台归档目录与示例文件结构</desc>
+
+  <!-- 外框 -->
+  <rect x="20" y="20" width="640" height="480" rx="10" ry="10" fill="white" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <!-- 标题栏 -->
+  <rect x="20" y="20" width="640" height="30" rx="10" ry="10" fill="#F1EFE8"/>
+  <rect x="20" y="40" width="640" height="10" fill="#F1EFE8"/>
+  <circle cx="36" cy="35" r="4" fill="#E24B4A"/>
+  <circle cx="50" cy="35" r="4" fill="#EF9F27"/>
+  <circle cx="64" cy="35" r="4" fill="#639922"/>
+  <text x="84" y="39" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">Finder — 02.素材收件箱</text>
+
+  <!-- 根目录 -->
+  <rect x="40" y="65" width="14" height="14" rx="2" ry="2" fill="#FAEEDA"/>
+  <text x="60" y="76" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="500" fill="#2C2C2A">02.素材收件箱</text>
+  <text x="160" y="76" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">10 个子目录</text>
+
+  <!-- 分隔线 -->
+  <line x1="60" y1="85" x2="660" y2="85" stroke="#F1EFE8" stroke-width="0.5"/>
+
+  <!-- 列布局：左右两列 -->
+  <!-- 左列 -->
+  <g>
+    <!-- 02.微信文章 -->
+    <rect x="56" y="100" width="14" height="14" rx="2" ry="2" fill="#EAF3DE"/>
+    <text x="76" y="111" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">02.微信文章/</text>
+    <text x="100" y="128" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-15-WorkBuddy-Pinterest社媒作图Skill.md</text>
+    <text x="100" y="142" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ images/2026-08-15-...</text>
+    <text x="116" y="156" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ img_01.jpeg (320 KB)</text>
+    <text x="116" y="170" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ img_02.jpeg (280 KB)</text>
+    <text x="116" y="184" font-family="ui-monospace, monospace" font-size="10" fill="#888780">└─ img_03.jpeg (410 KB)</text>
+
+    <!-- 03.小红书素材 -->
+    <rect x="56" y="208" width="14" height="14" rx="2" ry="2" fill="#FCEBEB"/>
+    <text x="76" y="219" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">03.小红书素材/</text>
+    <text x="100" y="236" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ AI工具/2026-08-11-某博主-AI工具推荐/</text>
+    <text x="116" y="250" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ *.md + media/ (9 张 webp)</text>
+  </g>
+
+  <!-- 右列 -->
+  <g>
+    <!-- 07.抖音视频 -->
+    <rect x="350" y="100" width="14" height="14" rx="2" ry="2" fill="#FAECE7"/>
+    <text x="370" y="111" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">07.抖音视频/</text>
+    <text x="394" y="128" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-11-某账号-某视频标题/</text>
+    <text x="410" y="142" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ 视频文件.mp4 (12 MB)</text>
+    <text x="410" y="156" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ 转录文本.md</text>
+    <text x="410" y="170" font-family="ui-monospace, monospace" font-size="10" fill="#888780">└─ 封面.jpg</text>
+
+    <!-- 11.视频号 -->
+    <rect x="350" y="194" width="14" height="14" rx="2" ry="2" fill="#EEEDFE"/>
+    <text x="370" y="205" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">11.视频号/</text>
+    <text x="394" y="222" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-11-某账号-某视频/</text>
+    <text x="410" y="236" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ 视频.mp4</text>
+    <text x="410" y="250" font-family="ui-monospace, monospace" font-size="10" fill="#888780">└─ 转录文本.md</text>
+  </g>
+
+  <!-- 第二行 -->
+  <g>
+    <!-- 12.快手 -->
+    <rect x="56" y="282" width="14" height="14" rx="2" ry="2" fill="#E6F1FB"/>
+    <text x="76" y="293" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">12.快手/</text>
+    <text x="100" y="310" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-12-某创作者-某视频/</text>
+    <text x="116" y="324" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ 视频.mp4 + 转录文本.md</text>
+
+    <!-- 13.B站 -->
+    <rect x="56" y="346" width="14" height="14" rx="2" ry="2" fill="#FBEAF0"/>
+    <text x="76" y="357" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">13.B站/</text>
+    <text x="100" y="374" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-13-老番茄-某教程/</text>
+    <text x="116" y="388" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ 视频.mp4 (45 MB, 官方字幕)</text>
+    <text x="116" y="402" font-family="ui-monospace, monospace" font-size="10" fill="#888780">└─ 转录文本.md</text>
+
+    <!-- 14.海外 -->
+    <rect x="56" y="424" width="14" height="14" rx="2" ry="2" fill="#E1F5EE"/>
+    <text x="76" y="435" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#2C2C2A">14.海外/</text>
+    <text x="100" y="452" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ TikTok/YouTube 视频（与 07 同结构）</text>
+  </g>
+
+  <!-- 15.知识星球（高亮） -->
+  <rect x="350" y="282" width="300" height="170" rx="8" ry="8" fill="#FAFAF7" stroke="#EEEDFE" stroke-width="1"/>
+  <rect x="358" y="290" width="14" height="14" rx="2" ry="2" fill="#EEEDFE"/>
+  <text x="378" y="301" font-family="ui-sans-serif, system-ui" font-size="12" font-weight="500" fill="#3C3489">15.知识星球/  ← v1.7.0 新增</text>
+  <text x="402" y="318" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-20-希尔顿-WorkBuddy入门/</text>
+  <text x="418" y="332" font-family="ui-monospace, monospace" font-size="10" fill="#888780">├─ *.md (frontmatter + 正文)</text>
+  <text x="418" y="346" font-family="ui-monospace, monospace" font-size="10" fill="#888780">└─ media/ (可选附件)</text>
+  <text x="402" y="370" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-15-老张-AI提效5大原则.md</text>
+  <text x="402" y="386" font-family="ui-monospace, monospace" font-size="10" fill="#5F5E5A">└─ 2026-08-10-李四-ClaudeCode实战.md</text>
+  <text x="378" y="412" font-family="ui-sans-serif, system-ui" font-size="11" fill="#534AB7">专题字段：topic_id + group_id + type</text>
+  <text x="378" y="430" font-family="ui-sans-serif, system-ui" font-size="11" fill="#534AB7">抓取来源：zsxq-cli topic +detail</text>
+
+  <!-- 底部注解 -->
+  <text x="340" y="480" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#5F5E5A">图 3：所有外部链接集中到 Obsidian 一个目录树下</text>
+  <text x="340" y="497" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="10" fill="#888780">9 个平台子目录统一命名规则：MM.平台名/YYYY-MM-DD-作者-标题/</text>
+</svg>

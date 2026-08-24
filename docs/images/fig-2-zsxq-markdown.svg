@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 480" role="img">
+  <title>知识星球归档后的 Obsidian Markdown 效果</title>
+  <desc>Obsidian 风格的 Markdown 渲染，左侧文件树，右侧主区域显示带 frontmatter 的知识星球主题</desc>
+
+  <!-- 外框 -->
+  <rect x="20" y="20" width="640" height="440" rx="10" ry="10" fill="white" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <!-- 标题栏 -->
+  <rect x="20" y="20" width="640" height="30" rx="10" ry="10" fill="#F1EFE8"/>
+  <rect x="20" y="40" width="640" height="10" fill="#F1EFE8"/>
+  <circle cx="36" cy="35" r="4" fill="#E24B4A"/>
+  <circle cx="50" cy="35" r="4" fill="#EF9F27"/>
+  <circle cx="64" cy="35" r="4" fill="#639922"/>
+  <text x="84" y="39" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">Obsidian — 02.素材收件箱</text>
+
+  <!-- 左侧文件树 -->
+  <rect x="20" y="50" width="160" height="410" fill="#FAFAF7"/>
+  <line x1="180" y1="50" x2="180" y2="460" stroke="#D3D1C7" stroke-width="0.5"/>
+
+  <text x="32" y="75" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#5F5E5A">02.素材收件箱</text>
+
+  <text x="44" y="98" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">02.微信文章</text>
+  <text x="44" y="115" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">03.小红书素材</text>
+  <text x="44" y="132" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">05.网页文字</text>
+  <text x="44" y="149" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">07.抖音视频</text>
+  <text x="44" y="166" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">11.视频号</text>
+  <text x="44" y="183" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">12.快手</text>
+  <text x="44" y="200" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">13.B站</text>
+  <text x="44" y="217" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">14.海外</text>
+
+  <!-- 高亮当前目录 -->
+  <rect x="26" y="225" width="150" height="18" rx="3" ry="3" fill="#EEEDFE"/>
+  <text x="44" y="239" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#3C3489">15.知识星球</text>
+
+  <!-- 子文件 -->
+  <text x="60" y="260" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">2026-08-20-希尔顿</text>
+  <text x="76" y="277" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#2C2C2A">WorkBuddy入门指南...</text>
+  <text x="60" y="297" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">2026-08-15-老张</text>
+  <text x="76" y="314" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">AI 提效 5 大原则.md</text>
+  <text x="60" y="334" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">2026-08-10-李四</text>
+  <text x="76" y="351" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">Claude Code 实战.md</text>
+
+  <text x="44" y="385" font-family="ui-sans-serif, system-ui" font-size="11" fill="#888780">通用网页</text>
+
+  <!-- 主区域 -->
+  <text x="200" y="78" font-family="ui-sans-serif, system-ui" font-size="13" font-weight="500" fill="#2C2C2A">2026-08-20-希尔顿-WorkBuddy入门指南从灵感到发布.md</text>
+
+  <!-- YAML frontmatter -->
+  <rect x="200" y="92" width="440" height="120" rx="4" ry="4" fill="#F1EFE8"/>
+  <text x="210" y="108" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">---</text>
+  <text x="210" y="123" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">title: "WorkBuddy 入门指南：从灵感到发布"</text>
+  <text x="210" y="138" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">source: "知识星球 - AI 提效圈 · 希尔顿"</text>
+  <text x="210" y="153" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">date: 2026-08-20</text>
+  <text x="210" y="168" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">topic_id: "789012345"</text>
+  <text x="210" y="183" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">group_id: "123456789"</text>
+  <text x="210" y="198" font-family="ui-monospace, monospace" font-size="11" fill="#2C2C2A">---</text>
+
+  <!-- 标题 -->
+  <text x="200" y="234" font-family="ui-sans-serif, system-ui" font-size="15" font-weight="500" fill="#2C2C2A">WorkBuddy 入门指南：从灵感到发布</text>
+
+  <!-- 段落 -->
+  <text x="200" y="258" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">从灵感捕捉到最终发布，WorkBuddy 提供 5 个核心环节</text>
+  <text x="200" y="274" font-family="ui-sans-serif, system-ui" font-size="11" fill="#5F5E5A">的 AI 辅助...</text>
+
+  <!-- 高亮的标签 -->
+  <rect x="200" y="290" width="60" height="20" rx="10" ry="10" fill="#EEEDFE"/>
+  <text x="230" y="304" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="10" fill="#3C3489">#知识星球</text>
+  <rect x="266" y="290" width="60" height="20" rx="10" ry="10" fill="#EAF3DE"/>
+  <text x="296" y="304" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="10" fill="#27500A">#AI提效圈</text>
+  <rect x="332" y="290" width="40" height="20" rx="10" ry="10" fill="#FAEEDA"/>
+  <text x="352" y="304" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="10" fill="#633806">#talk</text>
+
+  <!-- 元信息高亮 -->
+  <rect x="200" y="325" width="440" height="100" rx="4" ry="4" fill="#FAFAF7" stroke="#EEEDFE" stroke-width="1"/>
+  <text x="210" y="343" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#5F5E5A">主题元信息</text>
+  <text x="210" y="362" font-family="ui-sans-serif, system-ui" font-size="11" fill="#2C2C2A">主题 ID：789012345</text>
+  <text x="210" y="378" font-family="ui-sans-serif, system-ui" font-size="11" fill="#2C2C2A">所属星球：AI 提效圈</text>
+  <text x="210" y="394" font-family="ui-sans-serif, system-ui" font-size="11" fill="#2C2C2A">互动数据：12 评论 / 48 点赞 / 200 阅读</text>
+  <text x="210" y="410" font-family="ui-sans-serif, system-ui" font-size="11" fill="#2C2C2A">抓取来源：zsxq-cli topic +detail</text>
+
+  <!-- 底部注解 -->
+  <text x="340" y="465" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="11" font-weight="500" fill="#5F5E5A">图 2：知识星球主题归档后 — frontmatter + 正文 + 元信息</text>
+</svg>
