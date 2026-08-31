@@ -1,8 +1,8 @@
 ---
 name: link-to-inbox
-description: "跨平台链接自动归档到 Obsidian 素材收件箱。输入一个链接（公众号/小红书/抖音/快手/B站/视频号/TikTok/YouTube/知识星球），自动识别平台、优先通过 dousnap 抓取完整内容（标题+描述+口播文案+封面+视频），知识星球走 zsxq-cli topic +detail，按格式归档到 Obsidian 02.素材收件箱。支持飞书远程触发。"
-description_zh: "链接自动归档到 Obsidian 素材收件箱（dousnap + zsxq-cli 双入口）"
-version: 1.7.0
+description: "跨平台链接自动归档到 Obsidian 素材收件箱。输入一个链接（公众号/小红书/抖音/快手/B站/视频号/TikTok/YouTube/知识星球/X推特），自动识别平台、优先通过 dousnap 抓取完整内容（标题+描述+口播文案+封面+视频），知识星球走 zsxq-cli topic +detail，X 推文走 chrome-direct 复用本机登录态 + syndication API 兜底，按格式归档到 Obsidian 02.素材收件箱。支持飞书远程触发。"
+description_zh: "链接自动归档到 Obsidian 素材收件箱（dousnap + zsxq-cli + chrome-direct 三入口）"
+version: 1.8.0
 allowed-tools: Read,Write,Bash,WebFetch,Skill,Glob
 metadata:
   clawdbot:
@@ -41,7 +41,8 @@ metadata:
   ├─ 视频号 (channels.weixin.qq.com) → dousnap（首选，绕开 macOS 保存面板）/ convry（兜底）
   ├─ B站 (bilibili.com) → dousnap（首选，字幕更准）/ yt-dlp + whisper.cpp（兜底）
   ├─ TikTok / YouTube → dousnap（新增）
-  └─ 知识星球 (zsxq.com) → zsxq-cli topic +detail（直连 API）
+  ├─ 知识星球 (zsxq.com) → zsxq-cli topic +detail（直连 API）
+  └─ X 推特 (x.com / twitter.com) → chrome-direct（首选，复用登录态）+ syndication API（兜底）
   ↓
 生成 Obsidian .md（带标准 frontmatter）
   ↓
@@ -77,6 +78,7 @@ metadata:
 | 快手 | 12.快手/ | 12.快手/YYYY-MM-DD-作者-标题/ |
 | TikTok/YouTube | 14.海外/ | 14.海外/YYYY-MM-DD-作者-标题/ |
 | 知识星球 | 15.知识星球/ | 15.知识星球/YYYY-MM-DD-作者-标题/ |
+| X 推特 | 16.X推文/ | 16.X推文/media/ |
 | 通用网页 | 05.网页文字/ | — |
 
 ## 一、识别平台类型
@@ -93,6 +95,7 @@ metadata:
 | channels.weixin.qq.com / finder.video.qq.com | 视频号 | sph-video |
 | tiktok.com / youtube.com / youtu.be | TikTok/YouTube | overseas-video |
 | zsxq.com / wx.zsxq.com / articles.zsxq.com | 知识星球 | zsxq-topic |
+| x.com / twitter.com / t.co | X 推特 | x-post |
 | 其他 | 通用网页 | webpage |
 
 **判断逻辑**：
@@ -113,6 +116,9 @@ elif any(x in url for x in ["channels.weixin.qq.com", "finder.video.qq.com"]):
 elif any(x in url for x in ["zsxq.com", "wx.zsxq.com", "articles.zsxq.com"]):
     platform = "知识星球"
     dest_dir = "15.知识星球"
+elif any(x in url for x in ["x.com", "twitter.com", "t.co"]):
+    platform = "X (Twitter)"
+    dest_dir = "16.X推文"
 else:
     platform = "通用网页"
     dest_dir = "05.网页文字"
@@ -535,6 +541,186 @@ ls -lt "$VAULT" | head -10
 
 **下载路径**：视频文件由 Chrome 保存到 `02.素材收件箱/` 根目录，skill 后续按归档命名规则移动到 `11.视频号/YYYY-MM-DD-作者-标题/` 子目录。
 
+### 2.7 X 推特 (x.com / twitter.com / t.co)
+
+> **不走 dousnap**（dousnap 仅支持抖音/小红书/快手/B站/视频号/TikTok/YouTube），X 推文走 chrome-direct 复用本机 Chrome 登录态 + syndication API 公开兜底。
+
+**URL 格式识别**：
+
+```
+标准推文：https://x.com/<handle>/status/<tweet_id>
+带查询参数：https://x.com/<handle>/status/<tweet_id>?s=20&t=...
+短链：https://t.co/<slug>  →  需先解析为标准推文 URL
+```
+
+**首选方式：chrome-direct 复用本机 Chrome 登录态**
+
+```bash
+# 1. 列出可用浏览器，确认 chrome-direct 的 browser-id（一般为 direct_local_<数字>）
+browser-act browser list
+
+# 2. ⚠️ 关键坑：session 名要唯一，避免复用已开标签页导致 url ≠ 预期
+#    同时建议去掉 ?s=20 这种查询参数，避免 Chrome 误以为是别的页面
+CLEAN_URL=$(echo "<链接>" | sed -E 's/\?.*$//')
+browser-act --session x-post-archive-$RANDOM browser open <browser-id> "$CLEAN_URL" --headed
+
+# 3. ⚠️ 不要等 wait stable——x.com 后台 SSE 持续活动，稳定检测永不通过
+#    直接评估 article 是否就绪即可
+browser-act --session x-post-archive-* eval "(()=>{const a=document.querySelector('article[data-testid=\"tweet\"]');if(!a)return JSON.stringify({ready:false,url:location.href,title:document.title});return JSON.stringify({ready:true,url:location.href,title:document.title,articleLen:a.innerText.length})})()"
+
+# 4. 一次性提取所有元数据 + 正文 + 图片 URL（避免反复 eval）
+#    ⚠️ 关键：[data-testid="tweetText"] 长度=0 是 Twitter 懒加载设计，
+#    必须用 article.innerText 兜底才能拿到完整正文
+browser-act --session x-post-archive-* eval "(()=>{const articles=document.querySelectorAll('article[data-testid=\"tweet\"]');const a=articles[0];if(!a)return JSON.stringify({error:'no tweet'});const handleLink=Array.from(a.querySelectorAll('a[role=\"link\"]')).map(l=>l.getAttribute('href')).find(h=>h&&h.startsWith('/')&&!h.includes('/status/')&&h.split('/').filter(Boolean).length===1)||'';const userNameText=a.querySelector('[data-testid=\"User-Name\"]')?.textContent?.trim()||'';const userName=userNameText.replace(/^@/,'').replace(handleLink.replace('/',''),'').trim()||userNameText;const timeUtc=a.querySelector('time')?.getAttribute('datetime')||'';const text=a.innerText;const images=Array.from(a.querySelectorAll('img[src*=\"pbs.twimg.com/media\"]')).map(i=>i.src).filter((v,i,arr)=>arr.indexOf(v)===i);const metrics=Array.from(a.querySelectorAll('[data-testid=\"app-text-transition-container\"]')).map(e=>e.textContent?.trim()).filter(Boolean);const replyCount=metrics[0]||'';const retweetCount=metrics[1]||'';const likeCount=metrics[2]||'';const viewCount=text.match(/([\d,]+)\s*查看/)?.[1]||'';return JSON.stringify({userName,handle:handleLink,timeUtc,text,images,replyCount,retweetCount,likeCount,viewCount,articleLen:text.length},null,2)})()"
+```
+
+**下载原图**（⚠️ 推文图片默认给的是 medium，改 name=large 才能拿原图）：
+
+```bash
+# 1. 创建附件目录
+VAULT="/Users/sheldon/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+DEST="$VAULT/02.素材收件箱/16.X推文/<YYYY-MM-DD>-@<handle>-<标题>/media"
+mkdir -p "$DEST"
+
+# 2. 用 Python 批量下载（替换 name=medium 为 name=large）
+/Users/sheldon/.workbuddy/binaries/python/envs/default/bin/python3 << PYEOF
+import urllib.request, os, re
+VAULT = "/Users/sheldon/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+dest = os.path.join(VAULT, "02.素材收件箱/16.X推文", "<YYYY-MM-DD>-@<handle>-<标题>", "media")
+os.makedirs(dest, exist_ok=True)
+raw_urls = """<从第 4 步 eval 返回的 images 数组粘贴>"""
+urls = re.findall(r'https?://[^\s\",]+', raw_urls)
+urls = [u.replace('name=medium','name=large') for u in urls]
+for i, url in enumerate(urls, 1):
+    fpath = os.path.join(dest, f"img_{i}.jpg")
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as r, open(fpath, "wb") as f:
+            f.write(r.read())
+        print(f"OK  img_{i}.jpg  ({os.path.getsize(fpath):,} bytes)")
+    except Exception as e:
+        print(f"FAIL  img_{i}.jpg  ({e})")
+print(f"\nFiles: {os.listdir(dest)}")
+PYEOF
+```
+
+**兜底方式 1：syndication API（无需登录，公开）**
+
+> 适用于 chrome-direct 登录态过期 / 反爬触发 / 想批量抓公开推文。
+>
+> ⚠️ **必须带 `lang=en&token=x` 参数**，否则返回 `{}` 空 JSON（2026-08-30 实测发现）
+
+```bash
+# 1. 从 URL 提取 tweet_id
+TWEET_ID=$(echo "<链接>" | grep -oE 'status/[0-9]+' | grep -oE '[0-9]+')
+
+# 2. curl 抓 syndication API（必须带 lang+token，否则返回 {}）
+curl -sL "https://cdn.syndication.twimg.com/tweet-result?id=$TWEET_ID&lang=en&token=x" \
+  -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/150.0.0.0 Safari/537.36" \
+  > /tmp/x_syndication_$TWEET_ID.json
+
+# 3. 关键字段（实测 2026-08-30 / 2026-08-31）
+# 顶层:
+# - id_str                推文 ID（字符串）
+# - created_at            UTC ISO 时间
+# - text                  推文正文（X 长文只有短链，主文短）
+# - lang                  zh / en / zxx（zxx = 无文字/纯链接/纯媒体）
+# - favorite_count        点赞数
+# - conversation_count    回复数（注意：不是 reply_count）
+# - possibly_sensitive    敏感标记
+# - isEdited / isStaleEdit
+# - entities.urls[]       推文里的链接（含 display_url / expanded_url）
+# - article.cover_media   X 长文封面图（含 original_img_url）
+#
+# user.* (嵌套):
+# - user.id_str           用户 ID
+# - user.name             显示名（如 "云析"）
+# - user.screen_name      handle（不带 @，如 "yunxi0623"）
+# - user.profile_image_url_https
+# - user.is_blue_verified
+#
+# ⚠️ syndication API 不返回的字段（必须靠 chrome-direct 拿）:
+# - retweet_count         转推数
+# - quote_count           引用数
+# - view_count            浏览量
+# - mediaDetails          普通推文的内嵌图片/视频列表（X 长文无此字段，正文图在 article.cover_media）
+```
+
+**X 长文特殊处理**：
+
+如果 syndication 返回的 `text` 是短链（如 `https://t.co/xxx`），且 `entities.urls[].expanded_url` 是 `https://x.com/i/article/<id>` 形式，说明这条推文是 **X 长文（Article）**，主文在 article 页里。需要：
+1. 解析出 `article_id`（从 `expanded_url`）
+2. chrome-direct 打开 `https://x.com/i/article/<article_id>` 拿正文
+3. 或者直接靠 chrome-direct `article.innerText` 兜底拿全文（已在 v1.8.0 流程里默认做）
+
+**兜底方式 2：stealth-extract（无需登录，markdown 输出）**
+
+```bash
+# 适合 chrome-direct / syndication 都失败时的兜底
+browser-act stealth-extract "<链接>" --content-type markdown
+```
+
+**frontmatter 适配（X 推文特有字段）**：
+
+```yaml
+---
+title: "<推文首行或话题>"
+created: <归档日期 YYYY-MM-DD>
+source: "X (Twitter) - <作者显示名> @<handle>"
+source_url: "<原始链接>"
+date: <推文发布日 YYYY-MM-DD>
+imported_at: <抓取日期时间>
+tags:
+  - 素材收件箱
+  - X-Twitter
+  - <内容相关tags>
+type: inbox-raw
+extraction_status: "chrome-direct 已登录态抓取；<N>张原图；<回复> 回复 / <转推> 转推 / <点赞> 点赞 / <引用> 引用 / <浏览> 浏览"
+author: <作者显示名> (@<handle>)
+tweet_id: <数字 ID>
+author_handle: "@<handle>"
+author_name: "<作者显示名>"
+lang: <zh / en / ...>
+published_at_utc: <ISO UTC>
+published_at_local: "<YYYY-MM-DD HH:MM +08:00>"
+metrics:
+  replies: <int>
+  retweets: <int>
+  likes: <int>
+  quotes: <int>
+  views: <int>
+media_count: <int>
+has_quoted_tweet: <bool>
+images_path: "[[media/]]"  # 仅在有图片附件时填写
+---
+```
+
+**文件名规范**：
+
+```
+<YYYY-MM-DD>-@<handle>-<标题截取30字以内>.md
+```
+
+例如：`2026-08-30-@yunxi0623-OpenAI已经用上WebMCP.md`
+
+**注意**：
+
+- **会话复用坑**：chrome-direct session 名必须唯一 + 去掉 URL 查询参数，否则会路由到已存在的标签页
+- **wait stable 不可用**：x.com 后台 SSE / analytics 持续有网络活动，稳定检测永不通过，直接评估 article 就绪即可
+- **tweetText selector 失效**：Twitter 在 article 内不渲染文本节点，必须用 `article.innerText` 兜底
+- **图片必须改 name=large**：默认 medium 尺寸，原图需要手动替换 query 参数
+- **时间换算**：`time[datetime]` 是 UTC ISO，需 `+8h` 换算为北京时间
+- **作者信息**：不要从 `[data-testid="User-Name"]` textContent 拆分（会得到 `"云析@yunxi0623"` 合并文本），从 `a[role="link"]` 的 href 单独拿 handle 更可靠
+
+**抓取边界（不能做）**：
+
+- ❌ 批量爬用户主页时间线（违反 X ToS，会触发账号风险）
+- ❌ 高频单用户抓取（>10 条/分钟会被封 IP / session）
+- ❌ 抓私密账号 / 私密推文（必须用户已登录且账号公开）
+- ❌ 把抓取的推文二次公开发布（原始版权仍归作者）
+
+只允许：单条公开推文抓取 + 用户私有知识库归档。
+
 ## 三、归档格式
 
 ### 标准 Frontmatter
@@ -597,6 +783,15 @@ images_path: "[[media/<子目录>/]]"  # 公众号文章
   └── 转录文本.md
 ```
 
+**X 推特**：
+```
+16.X推文/2026-08-30-@yunxi0623-OpenAI已经用上WebMCP/
+  ├── 2026-08-30-@yunxi0623-OpenAI已经用上WebMCP.md
+  └── media/
+      ├── img_1.jpg
+      └── img_2.jpg
+```
+
 ## 四、回复摘要格式
 
 ### 4.1 对话内回复
@@ -648,6 +843,12 @@ lark-cli im +messages-send \
 | 知识星球 401 | 运行 `zsxq-cli auth login` 重新走 OAuth 设备码 |
 | 知识星球 403 | 当前账户不在目标星球内，无法抓取私有主题，如实告知 |
 | 知识星球主题被星主删除 | 抓取失败，如实报告，不假装完成 |
+| X 推文 url ≠ 预期（eval 返回 xierdun.vip 等） | chrome-direct session 复用旧标签页 → `session close` + 新 name + 去掉 URL 查询参数重开 |
+| X 推文 wait stable 永远 timeout | x.com 后台 SSE 持续活动，**跳过 wait stable**，直接评估 article 是否就绪 |
+| X 推文 `[data-testid="tweetText"]` 长度=0 | Twitter 懒加载文本节点 → 用 `article.innerText` 兜底拿正文 |
+| X 推文图片只有 medium 尺寸 | 默认 `?format=jpg&name=medium`，手动改 `name=large` 拿原图 |
+| X 推文反爬 403 / Cloudflare challenge | chrome-direct 登录态失效 → 兜底 syndication API（无需登录）；都不行再 stealth-extract |
+| X 推文私密账号 / 未登录看不到 | 提示用户在 Chrome 登录 X，syndication API 也只能拿公开推文 |
 | vault 目录不存在 | 自动创建 |
 
 ## 六、飞书远程触发说明
@@ -659,4 +860,4 @@ lark-cli im +messages-send \
 
 ---
 
-_本 skill 覆盖公众号（强支持）、小红书（chrome-direct 复用 Chrome 登录态）、抖音/视频号/B站/快手/TikTok/YouTube（dousnap + 平台兜底）、知识星球（zsxq-cli 直连 API）共 9 个平台。通用网页走 05.网页文字 目录。_
+_本 skill 覆盖公众号（强支持）、小红书（chrome-direct 复用 Chrome 登录态）、抖音/视频号/B站/快手/TikTok/YouTube（dousnap + 平台兜底）、知识星球（zsxq-cli 直连 API）、X 推特（chrome-direct + syndication API 双入口）共 10 个平台。通用网页走 05.网页文字 目录。_
