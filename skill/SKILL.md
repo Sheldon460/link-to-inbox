@@ -1,8 +1,8 @@
 ---
 name: link-to-inbox
-description: "跨平台链接自动归档到 Obsidian 素材收件箱。输入一个链接（公众号/小红书/抖音/快手/B站/视频号/TikTok/YouTube/知识星球/X推特），自动识别平台、优先通过 dousnap 抓取完整内容（标题+描述+口播文案+封面+视频），知识星球走 zsxq-cli topic +detail，X 推文走 chrome-direct 复用本机登录态 + syndication API 兜底，按格式归档到 Obsidian 02.素材收件箱。支持飞书远程触发。"
-description_zh: "链接自动归档到 Obsidian 素材收件箱（dousnap + zsxq-cli + chrome-direct 三入口）"
-version: 1.8.0
+description: "跨平台链接自动归档到 Obsidian 素材收件箱。输入一个链接（公众号/小红书/抖音/快手/B站/视频号/TikTok/YouTube/知识星球/X推特/通用网页），自动识别平台、抓取完整内容（标题+作者+正文+图片）。视频平台（抖音/小红书/快手/B站/视频号/TikTok/YouTube）优先 dousnap；知识星球走 zsxq-cli；公众号走本机直连（绕过微信验证墙）；X 推文走 Jina Reader（推荐） + chrome-direct + syndication API 三级兜底；其他通用网页走 Jina Reader 统一入口，按格式归档到 Obsidian 02.素材收件箱。支持飞书远程触发。"
+description_zh: "链接自动归档到 Obsidian 素材收件箱（dousnap + zsxq-cli + chrome-direct + Jina Reader 四入口，公众号仍走本机）"
+version: 1.9.0
 allowed-tools: Read,Write,Bash,WebFetch,Skill,Glob
 metadata:
   clawdbot:
@@ -17,6 +17,9 @@ metadata:
         - ffmpeg
         - whisper-cli
         - mpv
+      env:
+        - JINA_API_KEY  # 可选；不填时 Jina 路径走免费额度（限速），公众号/X/通用网页仍可走本机兜底
+        - https_proxy   # 可选；中国大陆网络通常需要走代理才能访问 r.jina.ai
 ---
 
 # link-to-inbox — 链接自动归档到 Obsidian 素材收件箱
@@ -33,32 +36,39 @@ metadata:
   ↓
 识别平台类型（URL domain 匹配）
   ↓
-按平台分发抓取（**优先 dousnap 入口**，convry/whisper 降级为兜底）：
-  ├─ 公众号 (mp.weixin.qq.com) → WebFetch + curl 下载图片
+按平台分发抓取（**Mars 风格统一 fetchArticle 架构**）：
+  ├─ 公众号 (mp.weixin.qq.com) → 本机直连（绕过微信验证墙，必须）/ Jina Reader（兜底，被验证墙挡时退化为空内容）
   ├─ 小红书 (xhslink/xiaohongshu) → dousnap（首选）/ browser-act chrome-direct（兜底）
   ├─ 抖音 (douyin) → dousnap（首选）/ convry + Python（兜底）
-  ├─ 快手 (kuaishou) → dousnap（新增）
+  ├─ 快手 (kuaishou) → dousnap（首选）
   ├─ 视频号 (channels.weixin.qq.com) → dousnap（首选，绕开 macOS 保存面板）/ convry（兜底）
   ├─ B站 (bilibili.com) → dousnap（首选，字幕更准）/ yt-dlp + whisper.cpp（兜底）
-  ├─ TikTok / YouTube → dousnap（新增）
+  ├─ TikTok / YouTube → dousnap（首选）
   ├─ 知识星球 (zsxq.com) → zsxq-cli topic +detail（直连 API）
-  └─ X 推特 (x.com / twitter.com) → chrome-direct（首选，复用登录态）+ syndication API（兜底）
+  ├─ X 推特 (x.com / twitter.com) → Jina Reader（首选，mars 风格，需 JINA_API_KEY）/ chrome-direct + syndication API（兜底）
+  └─ 通用网页 → Jina Reader 统一入口（mars 风格通用抓取；需 JINA_API_KEY 走 https://r.jina.ai/）
+  ↓
+Mars 风格 post-processing：tidy() 清洗 markdown（去掉 Image N 编号、链接包裹、孤 permalink、重复标题）
   ↓
 生成 Obsidian .md（带标准 frontmatter）
   ↓
-下载附件到对应 media 目录
+Mars 风格并发下载图片：max 60 张 / 12 MB / 3 并发（图片 URL 来自 markdown `![](...)` 解析）
   ↓
 回复摘要（飞书 / 对话）
 ```
 
-### 优先 dousnap 的理由
+### Mars 风格 fetchArticle 设计要点（v1.9.0 借鉴自 Mars Editor reader.ts）
 
-[dousnap.com](https://www.dousnap.com/)（抖虫 DouChong）是一个统一的视频文案提取站点：
-- ✅ 支持 7 个平台：抖音/小红书/快手/B站/视频号/TikTok/YouTube
-- ✅ 一次拿到：标题 + 描述 + 口播文案（带【画面】【旁白】结构）+ 封面图 + 视频下载
-- ✅ 完全免费、无需登录、无需人机验证
-- ✅ 视频号场景不再依赖 macOS 保存面板（远程无人值守）
-- ✅ B 站用官方字幕提取，比 whisper ASR 更准
+Mars Editor 的抓取哲学（来自其 `reader.ts` 源码注释）：
+
+1. **抓取外包给第三方**（Mars 选 Jina.ai）——不内置 headless browser
+2. **POST 而非 GET**：URL 放 body 避免 `#` fragment / 双重编码问题
+3. **响应是 plain text 而非 JSON**：JSON 在长文里经常有未转义反斜杠（实测 v1.9.0 验证）—— Mars 默认请求 plain text，自行解析 `Title: ... / URL Source: ... / Published Time: ... / Markdown Content:` 头部
+4. **失败可解释**：HTTP 401/402/429/451 各自给用户友好的中文解释
+5. **图片本地化**：从 markdown `![](...)` 解析 URL，并发下载（限 60 张 / 12 MB）
+6. **公众号特例**：Mars 不走第三方，本机直连（因为 Jina 拿不到微信文章）
+
+link-to-inbox v1.9.0 完全沿用此设计：所有"通用抓取"（含 X 推文）走 Jina Reader，公众号保留本机直连。
 
 ## Vault 路径
 
@@ -543,7 +553,11 @@ ls -lt "$VAULT" | head -10
 
 ### 2.7 X 推特 (x.com / twitter.com / t.co)
 
-> **不走 dousnap**（dousnap 仅支持抖音/小红书/快手/B站/视频号/TikTok/YouTube），X 推文走 chrome-direct 复用本机 Chrome 登录态 + syndication API 公开兜底。
+> **不走 dousnap**（dousnap 仅支持抖音/小红书/快手/B站/视频号/TikTok/YouTube），X 推文 **v1.9.0 改为三入口推荐顺序**：
+>
+> 1. **首选**：Jina Reader 通用入口（mars 风格，需 `JINA_API_KEY` 环境变量；无需 Chrome 登录态、无需 Chrome 远程调试、无 cookie，r.jina.ai 远端 headless Chrome 渲染后返回 markdown）
+> 2. **兜底 1**：chrome-direct 复用本机 Chrome 登录态（已登录能看到私密推文、长文 article 完整版）
+> 3. **兜底 2**：syndication API 公开（`cdn.syndication.twimg.com`，无需登录，但只能拿公开推文，X 长文只给短链不给正文）
 
 **URL 格式识别**：
 
@@ -553,7 +567,33 @@ ls -lt "$VAULT" | head -10
 短链：https://t.co/<slug>  →  需先解析为标准推文 URL
 ```
 
-**首选方式：chrome-direct 复用本机 Chrome 登录态**
+**首选方式：Jina Reader（v1.9.0 新增，mars 风格推荐）**
+
+设置 `JINA_API_KEY` 环境变量后，调用 §2.8 通用 Jina Reader 入口会自动处理 X 推文（含 X 长文）。X 推文是 JS-heavy 站点，syndication API 和 chrome-direct 各有缺陷（前者不返回长文正文，后者依赖登录态），Jina 远端 headless Chrome 能拿到最完整的 markdown。实测 X 长文（《Ling-3.0-tiny 部署教程》8568 字节完整 markdown）：
+
+```bash
+curl -sS -X POST "https://r.jina.ai/" \
+  -H "Authorization: Bearer $JINA_API_KEY" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -H "X-Retain-Images: all" \
+  -H "X-Base: final" \
+  -H "X-Timeout: 45" \
+  -d "url=https://x.com/Re7_AI/status/2091717668869128410"
+```
+
+返回 plain text（**注意：用 plain text 模式不要 `Accept: application/json`——v1.9.0 实测发现 Jina JSON 模式在 X 长文里有未转义反斜杠导致 `Invalid \escape` 解析失败**），格式：
+
+```
+Title: 睿奇Re7 (@Re7_AI) on X
+URL Source: https://x.com/Re7_AI/status/2091717668869128410
+Published Time: 2026-08-24T02:42:09.000Z
+Markdown Content:
+<完整 markdown 正文>
+```
+
+走通用 §2.8 `fetchJinaArticle(url)` 函数即可，返回 `{title, url, byline, publishedTime, markdown, images}`。后续图片下载、归档走标准流程。
+
+**兜底方式 1：chrome-direct 复用本机 Chrome 登录态**（保留 v1.8.0 流程）
 
 ```bash
 # 1. 列出可用浏览器，确认 chrome-direct 的 browser-id（一般为 direct_local_<数字>）
@@ -721,6 +761,216 @@ images_path: "[[media/]]"  # 仅在有图片附件时填写
 
 只允许：单条公开推文抓取 + 用户私有知识库归档。
 
+### 2.8 通用网页 / Jina Reader 统一入口（v1.9.0 新增，mars 风格）
+
+> **借鉴自 Mars Editor 的 `reader.ts` fetchArticle 实现**。本入口是 X 推特、其他通用博客、文档站点、技术文章等"没有专门处理逻辑"的统一抓取入口。视频平台（抖音/小红书/快手/B站/视频号/TikTok/YouTube）仍走 dousnap，公众号仍走本机直连（见 §2.1），知识星球仍走 zsxq-cli（见 §2.6）。
+
+#### 2.8.1 配置
+
+**前置**（一次性，用户自己设）：
+
+```bash
+# 1. 注册 Jina Reader 免费 API key：https://jina.ai/reader/ → GitHub OAuth 登录 → 拿到 10M tokens 一次性额度
+# 2. 把 key 写到 shell 启动文件（**绝对不要 commit 到 git**）
+echo 'export JINA_API_KEY="jina_你的_key"' >> ~/.zshrc
+source ~/.zshrc
+
+# 3. 中国大陆网络通常需要代理才能访问 r.jina.ai（如 Clash Verge、TUN 模式或 HTTP 代理）
+#    让 curl 走代理：
+echo 'export https_proxy="http://127.0.0.1:7897"' >> ~/.zshrc   # 改成你的代理端口
+echo 'export http_proxy="http://127.0.0.1:7897"' >> ~/.zshrc
+```
+
+**关键约束**：
+
+| 环境变量 | 必填？ | 说明 |
+|----------|--------|------|
+| `JINA_API_KEY` | 可选 | 不填时 Jina 走免费额度（限速 20 req/min/IP，且 AS30058 等低信誉网络被拒——见 §5 错误处理） |
+| `https_proxy` / `http_proxy` | 可选 | 中国大陆网络通常需要；TUN/增强模式 Clash 已自动透明代理可不填 |
+
+**绝不**把 API key 硬编码进本 skill 或 commit 到 git。
+
+#### 2.8.2 核心 fetch 函数（mars 风格）
+
+```bash
+fetch_jina_article() {
+  local url="$1"
+  local key="${JINA_API_KEY:-}"
+  local timeout="${JINA_TIMEOUT:-45}"
+
+  # mars 风格：POST 而非 GET，URL 放 body 避免 # fragment 截断 / 双重编码
+  local headers=(
+    -H "Content-Type: application/x-www-form-urlencoded"
+    -H "X-Retain-Images: all"        # 保留 markdown 图片 URL
+    -H "X-Base: final"                # 相对 URL 解析基于最终跳转后的 URL
+    -H "X-Timeout: ${timeout}"
+  )
+  if [[ -n "$key" ]]; then
+    headers+=(-H "Authorization: Bearer $key")
+  fi
+
+  # ⚠️ 不要加 -H "Accept: application/json"：v1.9.0 实测发现 Jina JSON 模式在 X 长文里有未转义反斜杠
+  # （如 shell 命令里的 \" 转义），解析会失败。plain text 模式完美工作。
+  local resp
+  resp=$(curl -sS --max-time $((timeout + 15)) -X POST "https://r.jina.ai/" \
+    "${headers[@]}" \
+    -d "url=${url}" 2>&1)
+
+  # mars 风格：从 plain text 解析 Title / URL Source / Published Time / Markdown Content 头部
+  python3 << PYEOF
+import re, sys, json
+text = """${resp//\"/\\\"}"""
+# mars 风格：提取头部元数据，剩余作为正文
+fields = {}
+lines = text.split('\n')
+start = 0
+for i, line in enumerate(lines):
+    if re.match(r'^Markdown Content:\s*$', line):
+        start = i + 1
+        break
+    m = re.match(r'^([A-Z][A-Za-z ]+):\s*(.*)$', line)
+    if m: fields[m.group(1).strip()] = m.group(2).strip()
+    elif line.strip(): break
+content = '\n'.join(lines[start:])
+
+# mars 风格 tidy()：清洗 markdown 残留物
+def tidy(md):
+    return (md
+        .replace('![Image', '![')                                          # 去掉 Image N 编号
+        .replace('[![' + '!['*0, '[![')                                   # noop（避免连续替换）
+        # 实际上图包裹清理：
+    )
+
+# 简化版 tidy（按 Mars Editor 思路，但避免上面字符串拼接问题）
+def tidy2(md):
+    md = re.sub(r'!\[Image \d+(?::\s*)?', '![', md)        # Image 12: alt → ![alt
+    md = re.sub(r'\[(!\[[^\]]*\]\([^)]*\))\]\([^)]*\)', r'\1', md)  # 链接包裹图
+    md = re.sub(r'^[ \t]*\[[#¶§]?\]\([^)]*\)[ \t]*$', '', md, flags=re.MULTILINE)  # 孤 permalink
+    md = re.sub(r'^[ \t]*[=]{3,}[ \t]*$', '', md, flags=re.MULTILINE)  # setext 下划线
+    md = re.sub(r'[ \t]+$', '', md, flags=re.MULTILINE)
+    md = re.sub(r'\n{3,}', '\n\n', md)
+    return md.strip()
+
+# 提取图片 URL
+images = re.findall(r'!\[([^\]]*)\]\((https?://[^)]+)\)', content)
+
+result = {
+    'title': fields.get('Title', ''),
+    'url': fields.get('URL Source') or '${url}',
+    'byline': fields.get('Author', ''),
+    'publishedTime': fields.get('Published Time', ''),
+    'markdown': tidy2(content),
+    'images': [u for _, u in images],
+}
+print(json.dumps(result, ensure_ascii=False))
+PYEOF
+}
+```
+
+调用方式：
+
+```bash
+result=$(fetch_jina_article "https://example.com/article")
+title=$(echo "$result" | python3 -c "import sys,json; print(json.load(sys.stdin)['title'])")
+markdown=$(echo "$result" | python3 -c "import sys,json; print(json.load(sys.stdin)['markdown'])")
+images=$(echo "$result" | python3 -c "import sys,json; print(' '.join(json.load(sys.stdin)['images']))")
+```
+
+#### 2.8.3 错误处理（按 Mars Editor `explainStatus` 思路）
+
+| HTTP | 含义 | 用户友好的提示 |
+|------|------|---------------|
+| 200 | OK | — |
+| 400 / 422 | 抓取失败 | "这个地址抓不出正文 —— 多半是登录墙、付费墙，或者压根不是文章页" |
+| 401 | key 不对或 AS30058 等低信誉网络 | "Jina 的 key 不对，去设置里改一下，或者干脆清空 —— 不填 key 也能用（限速 20 req/min）" |
+| 402 | 额度用完 | "Jina 这个 key 的额度用完了。清空 key 就回到免费额度，或者去 jina.ai 充值" |
+| 429 | 限流 | "请求太频繁了，等一会儿再试"（有 key）/ "请求太频繁了（不填 key 是每分钟 20 次）" |
+| 451 | 法律拒绝 | "这个页面拒绝被抓取" |
+| 5xx | Jina 服务端问题 | "Jina 那边出错了（HTTP {code}），稍后再试" |
+
+**目标站点错误**（data.httpStatus >= 400）：
+
+| HTTP | 含义 | 用户友好的提示 |
+|------|------|---------------|
+| 404 / 410 | 链接打不开 | "这个链接打不开了（对方返回 404）" |
+| 401 / 403 | 站点要登录 | "这个页面要登录才看得到正文" |
+| 429 | 站点限流 | "对方站点觉得访问太频繁" |
+| 5xx | 站点出问题 | "对方站点这会儿有问题" |
+
+#### 2.8.4 图片下载（mars 风格并发）
+
+```bash
+download_jina_images() {
+  local dest_dir="$1"   # 目标目录（不含文件名）
+  local images_json="$2" # JSON 数组字符串，例如 '["https://...","https://..."]'
+  local max_images="${MAX_IMAGES:-60}"
+  local max_bytes_per_img="$((12 * 1024 * 1024))"
+  local concurrency="${CONCURRENCY:-3}"
+
+  python3 << PYEOF
+import urllib.request, os, json, re
+dest = "${dest_dir}"
+images = json.loads('''${images_json//\"/\\\"}''')[:${max_images}]
+os.makedirs(dest, exist_ok=True)
+ok = fail = 0
+for i, url in enumerate(images, 1):
+    fpath = os.path.join(dest, f"img_{i}.jpg")
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            data = r.read()
+        if len(data) > ${max_bytes_per_img}:
+            print(f"SKIP img_{i} too big ({len(data):,} bytes)"); fail += 1; continue
+        with open(fpath, 'wb') as f:
+            f.write(data)
+        print(f"OK img_{i}.jpg ({len(data):,} bytes)"); ok += 1
+    except Exception as e:
+        print(f"FAIL img_{i}: {e}"); fail += 1
+print(f"\nDone: {ok} ok, {fail} fail, total {len(os.listdir(dest))} files in {dest}")
+PYEOF
+}
+```
+
+#### 2.8.5 完整流程示例（通用博客文章）
+
+```bash
+# 1. 抓取
+url="https://example.com/some-article"
+result=$(fetch_jina_article "$url")
+title=$(echo "$result" | python3 -c "import sys,json; print(json.load(sys.stdin)['title'])")
+markdown=$(echo "$result" | python3 -c "import sys,json; print(json.load(sys.stdin)['markdown'])")
+images=$(echo "$result" | python3 -c "import sys,json; print(json.dumps(json.load(sys.stdin)['images']))")
+
+# 2. 创建附件目录
+VAULT="/Users/sheldon/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+DEST="$VAULT/02.素材收件箱/05.网页文字/$(date +%Y-%m-%d)-${title:0:30}"
+mkdir -p "$DEST"
+
+# 3. 下载图片
+download_jina_images "$DEST" "$images"
+
+# 4. 写 markdown（带 frontmatter）
+cat > "$DEST/$(date +%Y-%m-%d)-${title:0:30}.md" << MDEOF
+---
+title: "$title"
+created: $(date +%Y-%m-%d)
+source: "通用网页 - $(echo "$url" | sed -E 's|^https?://([^/]+).*|\1|')"
+source_url: "$url"
+date: $(date +%Y-%m-%d)
+imported_at: $(date "+%Y-%m-%d %H:%M:%S %Z")
+tags:
+  - 素材收件箱
+  - 通用网页
+type: inbox-raw
+extraction_status: "Jina Reader; $(echo "$images" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))") 张图片"
+---
+
+$markdown
+MDEOF
+
+echo "✅ 已归档到 $DEST"
+```
+
 ## 三、归档格式
 
 ### 标准 Frontmatter
@@ -849,6 +1099,15 @@ lark-cli im +messages-send \
 | X 推文图片只有 medium 尺寸 | 默认 `?format=jpg&name=medium`，手动改 `name=large` 拿原图 |
 | X 推文反爬 403 / Cloudflare challenge | chrome-direct 登录态失效 → 兜底 syndication API（无需登录）；都不行再 stealth-extract |
 | X 推文私密账号 / 未登录看不到 | 提示用户在 Chrome 登录 X，syndication API 也只能拿公开推文 |
+| **Jina Reader 401 (AuthenticationRequiredError)** | "blocked due to bad network reputation (AS30058)"：Clash 出口节点在低信誉网络段。**换非 AS30058 节点** 或注册免费 Jina API key（10M tokens 一次性）|
+| Jina Reader 401 普通（key 错） | 核对 `JINA_API_KEY` 是否设置正确 |
+| Jina Reader 402 | key 额度用完，去 jina.ai 充值 |
+| Jina Reader 429 | 限速，等 1 分钟；有 key 也撞限流的话换 key |
+| Jina Reader 451 | 目标站点法律拒绝被抓取（如 NYT），无法绕过 |
+| Jina Reader 返回空 content | 大概率登录墙，尝试 chrome-direct 或人工抓 |
+| Jina JSON 解析报 `Invalid \escape` | X 长文里的 shell 命令 `\"` 转义问题。**改用 plain text 模式**（不带 `Accept: application/json`），§2.8 的 fetch_jina_article 已默认走 plain text |
+| Jina 请求超时（60 秒） | JS-heavy 站点（X、Twitter），等；或拆开 URL 重试 |
+| r.jina.ai DNS 污染（解析到 157.240.1.33） | 设置 `https_proxy`/`http_proxy` 走 Clash 7897 端口 |
 | vault 目录不存在 | 自动创建 |
 
 ## 六、飞书远程触发说明
@@ -860,4 +1119,4 @@ lark-cli im +messages-send \
 
 ---
 
-_本 skill 覆盖公众号（强支持）、小红书（chrome-direct 复用 Chrome 登录态）、抖音/视频号/B站/快手/TikTok/YouTube（dousnap + 平台兜底）、知识星球（zsxq-cli 直连 API）、X 推特（chrome-direct + syndication API 双入口）共 10 个平台。通用网页走 05.网页文字 目录。_
+_本 skill 覆盖公众号（强支持）、小红书（chrome-direct 复用 Chrome 登录态）、抖音/视频号/B站/快手/TikTok/YouTube（dousnap + 平台兜底）、知识星球（zsxq-cli 直连 API）、X 推特（Jina Reader 首选 + chrome-direct + syndication API 三入口）、通用网页（Jina Reader 统一入口）共 10 个平台。通用网页走 05.网页文字 目录。_
