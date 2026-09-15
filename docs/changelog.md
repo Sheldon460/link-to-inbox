@@ -2,6 +2,42 @@
 
 link-to-inbox 的版本历史与重要变更。
 
+## v1.9.1 (2026-09-15)
+
+### 安全
+
+- **API key 加载机制重做**：v1.9.0 用 `JINA_API_KEY` env var，实测发现 shell 某些场景下 key 被损坏（看起来是 `jina_xxx` 但 Jina 返回 401 Invalid）。
+- v1.9.1 改用 `init.sh.example` 模板 + `source ./init.sh` 加载，**脚本里直接测试 key 可用性**。
+- 新增 `init.sh.example`（git tracked）+ 把 `init.sh` / `*.local.sh` / `*.secret` / `credentials.json` / `api-key.txt` 加入 `.gitignore`。
+- 更新 README § 配置节 + SKILL.md §2.8.1，告诉用户用 `cp init.sh.example init.sh` 流程。
+
+### 修复
+
+- 解决 env var 不可靠问题（直接验证而非依赖 shell 状态）
+
+## v1.9.0 (2026-09-15)
+
+### 新增
+
+- **§2.8 通用网页 / Jina Reader 统一入口**（mars 风格）🎉
+  - 借鉴 Mars Editor `reader.ts` 的 `fetchArticle` 设计
+  - X 推特改为 **Jina 首选**（mars 风格），保留 chrome-direct + syndication API 双兜底
+  - 新增 `fetch_jina_article()` 函数：POST `https://r.jina.ai/` + plain text 响应 + tidy() 清洗
+  - 图片并发下载（mars 风格：限 60 张 / 12 MB / 3 并发）
+  - HTTP 错误码友好中文解释（401/402/429/451/5xx）
+  - 错误处理章节加 Jina 专项（AS30058、JSON \escape 修复、plain text fallback）
+
+### 文档
+
+- 新增 `examples/jina.md`：配置 / 错误排查 / token 消耗 / 隐私说明
+
+## v1.8.0 (2026-09-12)
+
+### 改动
+
+- 总平台数：9 → 10（+1 通用网页 = 10 类）
+- 工作流图新增 Jina Reader 通用抓取分支（占位，v1.9.0 实现）
+
 ## v1.7.0 (2026-08-24)
 
 ### 新增

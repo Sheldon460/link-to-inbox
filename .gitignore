@@ -76,6 +76,13 @@ cookies.txt
 .env
 .env.local
 *.local
+*.local.sh
+*.secret
+credentials.json
+api-key.txt
+
+# link-to-inbox 特有的本地初始化脚本（保留 .example 模板）
+/init.sh
 
 # 抓取结果（不应提交）
 archive-test/

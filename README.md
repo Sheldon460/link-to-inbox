@@ -238,6 +238,31 @@ images_path: "[[media/]]"
 - 日期：原文发布日期，取不到用抓取日期
 - 标题：清理特殊字符（`/`、`\`、`:`、`*`、`?`、`<`、`>`、`|`）
 
+### Jina Reader API key（v1.9.1 起推荐）
+
+v1.9.0+ 增加了 **Mars 风格的 Jina Reader 通用抓取入口**（X 推特 / 通用网页）。它需要一个 API key：
+
+```bash
+# 1. 注册：打开 https://jina.ai/reader/ → 点 "Get API Key" → GitHub OAuth → 免费 10M tokens
+# 2. 复制 init 模板：
+cd ~/Downloads/link-to-inbox
+cp init.sh.example init.sh
+
+# 3. 编辑 init.sh，填 key + 检查代理端口
+$EDITOR init.sh
+
+# 4. 加载 + 验证：
+source ./init.sh
+# ✅ Jina API key 验证通过
+```
+
+**安全**：
+- `init.sh` 已在 `.gitignore` 里，**绝不 commit**
+- 不写 key 到任何 commit / PR / issue / 截图
+- 撤销旧 key / 申请新 key：https://jina.ai/api-dashboard
+
+完整文档：[examples/jina.md](examples/jina.md)
+
 ---
 
 ## 🗂 项目结构
@@ -253,7 +278,9 @@ link-to-inbox/
 │   ├── wechat-article.md  # 公众号归档示例
 │   ├── xiaohongshu.md     # 小红书归档示例
 │   ├── douyin.md          # 抖音归档示例
-│   └── zsxq.md            # 知识星球归档示例
+│   ├── zsxq.md            # 知识星球归档示例
+│   └── jina.md            # Jina Reader 通用抓取示例（v1.9.0+）
+├── init.sh.example        # 本地初始化模板（cp 到 init.sh 后填 key；init.sh 在 .gitignore）
 └── docs/
     ├── platform-matrix.md # 平台覆盖矩阵
     ├── error-codes.md     # 错误码处理表

@@ -1,0 +1,73 @@
+#!/bin/bash
+# init.sh.example — link-to-inbox v1.9.1+ 本地初始化模板
+#
+# 目的：
+#   1. 加载用户自己的 JINA_API_KEY（不提交到 git）
+#   2. 加载代理配置（Clash Verge / Surge / Shadowsocks）
+#   3. 验证 Jina 凭据能工作
+#
+# 使用步骤：
+#   1. cp init.sh.example init.sh
+#   2. 编辑 init.sh，填入你自己的 JINA_API_KEY
+#   3. 在每个新 shell 里：source ./init.sh
+#   4. （可选）加到 ~/.zshrc：echo 'source ~/path/to/init.sh' >> ~/.zshrc
+#
+# 安全提醒：
+#   - init.sh 已在 .gitignore 里，**绝不会被 commit**
+#   - 不要把 init.sh 上传到网盘、邮件、聊天
+#   - key 泄露后立即去 https://jina.ai/api-dashboard 撤销
+
+# ===== Jina Reader（必需，否则 X 推特抓取会失败）=====
+# 注册：https://jina.ai/reader/ → Get API Key（GitHub OAuth，免费 10M tokens）
+export JINA_API_KEY="jina_在这里粘贴你的key"
+
+# ===== 代理配置（必需，中国大陆网络）=====
+# Clash Verge 默认端口 7897；如果用 Surge 是 6152；Shadowsocks 是 1080
+export HTTPS_PROXY="http://127.0.0.1:7897"
+export HTTP_PROXY="http://127.0.0.1:7897"
+export ALL_PROXY="http://127.0.0.1:7897"
+
+# ===== 可选：覆盖默认 Jina 超时（秒）=====
+# 默认 60；X 长文建议 90；超长文章可设 120
+# export JINA_TIMEOUT="90"
+
+# ===== 可选：覆盖默认并发（图片下载）=====
+# 默认 3 并发；本机网络好可设 5-10
+# export JINA_IMAGE_CONCURRENCY="3"
+
+# ===== 验证：测试 Jina 是否能工作 =====
+echo "===link-to-inbox init==="
+echo "JINA_API_KEY: ${JINA_API_KEY:0:8}...${JINA_API_KEY: -4}"
+echo "PROXY: $HTTPS_PROXY"
+
+if [ -z "$JINA_API_KEY" ] || [[ "$JINA_API_KEY" == "jina_在这里"* ]]; then
+  echo "❌ JINA_API_KEY 未设置！"
+  echo "   1. 打开 https://jina.ai/reader/ 注册"
+  echo "   2. 复制你的 API key"
+  echo "   3. 编辑 init.sh 替换 JINA_API_KEY=\"...\""
+  return 1 2>/dev/null || exit 1
+fi
+
+# 测一下 Jina 连通性 + key 有效性
+TEST_RESP=$(curl -sS --max-time 30 -X POST "https://r.jina.ai/" \
+  -H "Authorization: Bearer $JINA_API_KEY" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "url=https://example.com" 2>&1)
+
+if echo "$TEST_RESP" | grep -q "Example Domain"; then
+  echo "✅ Jina API key 验证通过"
+elif echo "$TEST_RESP" | grep -q "AuthenticationRequiredError\|Invalid API key"; then
+  echo "❌ Jina API key 无效！"
+  echo "   1. 检查是否复制完整（不要有多余空格/换行）"
+  echo "   2. 登录 https://jina.ai/api-dashboard 看 key 是否过期"
+  return 1 2>/dev/null || exit 1
+elif echo "$TEST_RESP" | grep -q "Connection timed out\|Could not resolve"; then
+  echo "❌ 网络不通！检查代理配置"
+  echo "   当前 HTTPS_PROXY=$HTTPS_PROXY"
+  echo "   测试：curl -fsS --max-time 5 -I https://r.jina.ai/"
+  return 1 2>/dev/null || exit 1
+else
+  echo "⚠️  Jina 测试未识别响应（前 100 字符）："
+  echo "$TEST_RESP" | head -c 100
+fi
+echo "===init 完成==="

@@ -765,30 +765,47 @@ images_path: "[[media/]]"  # 仅在有图片附件时填写
 
 > **借鉴自 Mars Editor 的 `reader.ts` fetchArticle 实现**。本入口是 X 推特、其他通用博客、文档站点、技术文章等"没有专门处理逻辑"的统一抓取入口。视频平台（抖音/小红书/快手/B站/视频号/TikTok/YouTube）仍走 dousnap，公众号仍走本机直连（见 §2.1），知识星球仍走 zsxq-cli（见 §2.6）。
 
-#### 2.8.1 配置
+#### 2.8.1 配置（v1.9.1：使用 init.sh 模板）
 
-**前置**（一次性，用户自己设）：
+> **v1.9.1 修复**：v1.9.0 测试发现 `JINA_API_KEY` env var 在某些情况下会被 shell 损坏（看起来是 `jina_xxx` 但 Jina 返回 401 Invalid）。**v1.9.1 改用 `init.sh.example` 模板 + `source ./init.sh` 加载**，并在脚本里直接验证 key 可用性。
+
+**一次性设置**：
 
 ```bash
-# 1. 注册 Jina Reader 免费 API key：https://jina.ai/reader/ → GitHub OAuth 登录 → 拿到 10M tokens 一次性额度
-# 2. 把 key 写到 shell 启动文件（**绝对不要 commit 到 git**）
-echo 'export JINA_API_KEY="jina_你的_key"' >> ~/.zshrc
-source ~/.zshrc
+# 1. 克隆（如果还没）
+git clone --depth 1 https://github.com/Sheldon460/link-to-inbox.git ~/Downloads/link-to-inbox
+cd ~/Downloads/link-to-inbox
 
-# 3. 中国大陆网络通常需要代理才能访问 r.jina.ai（如 Clash Verge、TUN 模式或 HTTP 代理）
-#    让 curl 走代理：
-echo 'export https_proxy="http://127.0.0.1:7897"' >> ~/.zshrc   # 改成你的代理端口
-echo 'export http_proxy="http://127.0.0.1:7897"' >> ~/.zshrc
+# 2. 复制 init 模板（init.sh 已在 .gitignore，不会被 commit）
+cp init.sh.example init.sh
+
+# 3. 编辑 init.sh，填入你自己的 JINA_API_KEY
+$EDITOR init.sh
+#    - 注册：https://jina.ai/reader/ → Get API Key（GitHub OAuth，免费 10M tokens）
+#    - 替换：export JINA_API_KEY="jina_在这里粘贴你的key"
+#    - 检查代理端口（默认 7897 是 Clash Verge）
+
+# 4. 在每个 shell 里加载：
+source ./init.sh
+#    ✅ Jina API key 验证通过
+#    ✅ 代理已设
 ```
 
 **关键约束**：
 
 | 环境变量 | 必填？ | 说明 |
 |----------|--------|------|
-| `JINA_API_KEY` | 可选 | 不填时 Jina 走免费额度（限速 20 req/min/IP，且 AS30058 等低信誉网络被拒——见 §5 错误处理） |
+| `JINA_API_KEY` | **必填**（v1.9.1 起）| 不填时 init.sh 会拒绝运行；v1.9.0 允许空 key 但 401 风险大 |
 | `https_proxy` / `http_proxy` | 可选 | 中国大陆网络通常需要；TUN/增强模式 Clash 已自动透明代理可不填 |
 
-**绝不**把 API key 硬编码进本 skill 或 commit 到 git。
+**安全规则**：
+
+- ✅ `init.sh` 在 `.gitignore` 里，**绝不会被 commit**
+- ✅ 用户自己填 key（不被写进 SKILL.md / scripts / commit history）
+- ❌ **绝不**把 API key 硬编码进 SKILL.md、脚本、commit message、PR 描述
+- ❌ **绝不**把 `init.sh` 上传网盘 / 邮件 / 截图
+- ❌ **绝不**在公共频道（Discord / Slack）粘贴 key
+- ⚠️  key 一旦泄露，立即去 https://jina.ai/api-dashboard 撤销 + 申请新的
 
 #### 2.8.2 核心 fetch 函数（mars 风格）
 
