@@ -2,21 +2,24 @@
 <#
   ssh-watchdog.ps1
   For the RECURRING sshd death pattern (works, then dies, needs manual restart).
-  NOT a config rewriter. It does three things:
+  NOT a config rewriter. Three jobs:
     A. Collect crash evidence (Application + System + OpenSSH/Operational logs,
        memory pressure, service recovery config)
     B. Set service recovery so Windows auto-restarts sshd on crash
     C. Install a 5-minute scheduled-task watchdog that probes loopback banner
        and restarts sshd if it stops greeting
+  Output is written straight to a file (no in-memory collection) so it is
+  immune to collection-type corruption.
   ASCII-only by design.
   Result: %USERPROFILE%\Desktop\ssh-watchdog-result.txt
 #>
 
 $ErrorActionPreference = 'Continue'
 $out = Join-Path $env:USERPROFILE 'Desktop\ssh-watchdog-result.txt'
-$L = New-Object System.Collections.Generic.List[string]
-function Sec($t){ $L.Add(''); $L.Add("=== $t ===") }
-function W($t){ $L.Add([string]$t) }
+"" | Set-Content -Path $out -Encoding UTF8
+
+function Sec($t){ Add-Content -Path $out -Value ""; Add-Content -Path $out -Value "=== $t ===" }
+function W($t){ Add-Content -Path $out -Value ([string]$t) }
 
 $prog    = "$env:WINDIR\System32\OpenSSH"
 $keydir  = "$env:ProgramData\ssh"
@@ -48,32 +51,34 @@ $usedPct = [math]::Round(100 - ($freeGB / $totalGB * 100), 1)
 W ("  memory       : total ${totalGB} GB, free ${freeGB} GB, used ${usedPct}%")
 if ($usedPct -gt 90) { W "  !! MEMORY PRESSURE HIGH - likely the killer on a 4 GB VM" }
 
-# ------------------------------------------- A2. CRASH EVIDENCE
+# ------------------------------------------- A2. CRASH EVIDENCE - Application
 Sec "A2. CRASH EVIDENCE - Application log (sshd / Event 1000,1001,1002)"
 try {
     Get-WinEvent -FilterHashtable @{ LogName='Application'; StartTime=(Get-Date).AddDays(-2) } -MaxEvents 300 -ErrorAction Stop |
       Where-Object { ($_.Message -match 'sshd|OpenSSH') -or $_.Id -in 1000,1001,1002 } |
       Select-Object -First 15 |
-      ForEach-Object { W ("  [" + $_.TimeCreated + "] id=" + $_.Id + "  " + ($_.Message -replace '\s+',' ').Substring(0,[Math]::Min(160,($_.Message -replace '\s+',' ').Length))) }
+      ForEach-Object { $m = ($_.Message -replace '\s+',' '); W ("  [" + $_.TimeCreated + "] id=" + $_.Id + "  " + $m.Substring(0, [Math]::Min(160, $m.Length))) }
 } catch { W ("  " + $_.Exception.Message) }
 
+# ------------------------------------------- A3. CRASH EVIDENCE - System
 Sec "A3. CRASH EVIDENCE - System log (Service Control Manager, sshd)"
 try {
     Get-WinEvent -FilterHashtable @{ LogName='System'; StartTime=(Get-Date).AddDays(-2) } -MaxEvents 500 -ErrorAction Stop |
       Where-Object { $_.Message -match 'sshd|OpenSSH' } |
       Select-Object -First 20 |
-      ForEach-Object { W ("  [" + $_.TimeCreated + "] id=" + $_.Id + "  " + ($_.Message -replace '\s+',' ').Substring(0,[Math]::Min(160,($_.Message -replace '\s+',' ').Length))) }
+      ForEach-Object { $m = ($_.Message -replace '\s+',' '); W ("  [" + $_.TimeCreated + "] id=" + $_.Id + "  " + $m.Substring(0, [Math]::Min(160, $m.Length))) }
 } catch { W ("  " + $_.Exception.Message) }
 
+# ------------------------------------------- A4. OPENSSH/Operational
 Sec "A4. OPENSSH/Operational (last 40)"
 try {
     Get-WinEvent -LogName 'OpenSSH/Operational' -MaxEvents 40 -ErrorAction Stop |
-      ForEach-Object { W ("  [" + $_.TimeCreated + "] id=" + $_.Id + "  " + ($_.Message -replace '\s+',' ').Substring(0,[Math]::Min(140,($_.Message -replace '\s+',' ').Length))) }
+      ForEach-Object { $m = ($_.Message -replace '\s+',' '); W ("  [" + $_.TimeCreated + "] id=" + $_.Id + "  " + $m.Substring(0, [Math]::Min(140, $m.Length))) }
 } catch { W ("  " + $_.Exception.Message) }
 
+# ------------------------------------------- A5. RECOVERY SETTINGS
 Sec "A5. CURRENT SERVICE RECOVERY SETTINGS"
-$sc = & sc.exe qfailure sshd 2>&1
-$sc | ForEach-Object { W ("  " + $_) }
+& sc.exe qfailure sshd 2>&1 | ForEach-Object { W ("  " + $_) }
 
 # ------------------------------------------- B. SERVICE RECOVERY
 Sec "B. SET SERVICE RECOVERY (auto-restart on crash)"
@@ -81,7 +86,7 @@ try {
     & sc.exe failure sshd reset= 86400 actions= restart/5000/restart/5000/restart/10000 | Out-Null
     W "  sc failure sshd -> restart after 5s / 5s / 10s, reset daily"
     & sc.exe failureflag sshd 1 | Out-Null
-    W "  failureflag = 1 (also take action when service stops unexpectedly)"
+    W "  failureflag = 1 (also act when service stops unexpectedly)"
 } catch { W ("  recovery step error: " + $_.Exception.Message) }
 
 # ------------------------------------------- C. WATCHDOG
@@ -118,7 +123,6 @@ try {
     W "  scheduled task '$taskName' registered (every 5 min, SYSTEM)"
 } catch { W ("  watchdog registration error: " + $_.Exception.Message) }
 
-# run once now so it takes effect immediately
 try {
     & $wdPs1
     W "  watchdog ran once now."
@@ -126,7 +130,7 @@ try {
     if (Test-Path $wdLog) { Get-Content $wdLog -Tail 5 | ForEach-Object { W ("    " + $_) } }
 } catch { W ("  first-run error: " + $_.Exception.Message) }
 
-# ------------------------------------------- FINAL VERDICT
+# ------------------------------------------- VERDICT
 Sec "VERDICT"
 try {
     $s = Get-Service sshd
@@ -137,13 +141,12 @@ try {
     if ($usedPct -gt 90) {
         W ""
         W "  RECOMMENDATION: memory is the likely killer. Free RAM (close unused Chrome tabs)"
-        W "  or upgrade the VM to 8 GB. Watchdog will mask the symptom but not fix the cause."
+        W "  or upgrade the VM to 8 GB. Watchdog masks the symptom, not the cause."
     }
     W ""
     W "  NEXT: from Mac, try  ssh -p 22 administrator@165.154.135.98"
     W "  If it dies again within ~10 min, send me A2/A3/A4 output - that names the real killer."
 } catch { W ("  verdict error: " + $_.Exception.Message) }
 
-$L | Set-Content -Path $out -Encoding UTF8
 Write-Host ""
 Write-Host "RESULT_FILE = $out"
